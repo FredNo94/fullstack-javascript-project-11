@@ -10,6 +10,7 @@ export default {
   entry: './src/index.js',
   output: {
     path: resolve(__dirname, 'dist'),
+    filename: '[name].[contenthash].js',
     clean: true,
   },
   module: {
@@ -25,24 +26,61 @@ export default {
           },
         },
       },
-      { test: /\.css$/, use: ['style-loader', 'css-loader', 'postcss-loader'] },
+      { 
+        test: /\.css$/, 
+        use: ['style-loader', 'css-loader', 'postcss-loader'] 
+      },
       {
         test: /\.scss$/,
-        use: ['style-loader', 'css-loader', 'sass-loader', 'postcss-loader'],
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: [['autoprefixer']],
+              },
+            },
+          },
+          {
+            loader: 'sass-loader',
+            options: {
+              sassOptions: {
+                quietDeps: true, // Подавляет предупреждения из node_modules
+              },
+              // sourceMap: true, // Раскомментировать если нужны source maps
+            },
+          },
+        ],
       },
       {
-        test: /\.woff2?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        use: 'url-loader?limit=10000',
-      },
-      {
-        test: /\.(ttf|eot|svg)(\?[\s\S]+)?$/,
-        use: 'file-loader',
+        test: /\.(woff2?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'fonts/[name][ext][query]'
+        }
       },
     ],
   },
   plugins: [
     new HtmlWebpackPlugin({
       template: 'index.html',
+      minify: process.env.NODE_ENV === 'production' ? {
+        collapseWhitespace: true,
+        removeComments: true,
+      } : false,
     }),
   ],
+  resolve: {
+    extensions: ['.js', '.scss', '.css'],
+  },
+  devServer: {
+    static: {
+      directory: resolve(__dirname, 'public'),
+    },
+    compress: true,
+    port: 8080,
+    hot: true,
+  },
 };
