@@ -47,9 +47,8 @@ export default {
             loader: 'sass-loader',
             options: {
               sassOptions: {
-                quietDeps: true, // Подавляет предупреждения из node_modules
+                quietDeps: true,
               },
-              // sourceMap: true, // Раскомментировать если нужны source maps
             },
           },
         ],
@@ -74,10 +73,15 @@ export default {
   ],
   resolve: {
     extensions: ['.js', '.scss', '.css'],
+    alias: {
+      '@': resolve(__dirname, 'src'),
+      styles: resolve(__dirname, 'src/styles'),
+    },
   },
   devServer: {
     static: {
       directory: resolve(__dirname, 'public'),
+      publicPath: '/',
     },
     compress: true,
     port: 8080,
