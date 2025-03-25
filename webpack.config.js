@@ -1,18 +1,8 @@
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 export default {
   mode: process.env.NODE_ENV || 'development',
   entry: './src/index.js',
-  output: {
-    path: resolve(__dirname, 'dist'),
-    filename: '[name].[contenthash].js',
-    clean: true,
-  },
   module: {
     rules: [
       {
@@ -26,65 +16,41 @@ export default {
           },
         },
       },
-      { 
-        test: /\.css$/, 
-        use: ['style-loader', 'css-loader', 'postcss-loader'] 
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader', 'postcss-loader'],
       },
       {
         test: /\.scss$/,
-        use: [
-          'style-loader',
-          'css-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              postcssOptions: {
-                plugins: [['autoprefixer']],
-              },
-            },
-          },
-          {
-            loader: 'sass-loader',
-            options: {
-              sassOptions: {
-                quietDeps: true,
-              },
-            },
-          },
-        ],
+        use: ['style-loader', 'css-loader', 'sass-loader', 'postcss-loader'],
       },
       {
-        test: /\.(woff2?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
-        type: 'asset/resource',
-        generator: {
-          filename: 'fonts/[name][ext][query]'
-        }
+        test: /\.woff2?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+        use: 'url-loader?limit=10000',
+      },
+      {
+        test: /\.(ttf|eot|svg)(\?[\s\S]+)?$/,
+        use: 'file-loader',
       },
     ],
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: 'index.html',
-      minify: process.env.NODE_ENV === 'production' ? {
-        collapseWhitespace: true,
-        removeComments: true,
-      } : false,
+      template: './index.html',
     }),
   ],
-  resolve: {
-    extensions: ['.js', '.scss', '.css'],
-    alias: {
-      '@': resolve(__dirname, 'src'),
-      styles: resolve(__dirname, 'src/styles'),
-    },
+  output: {
+    clean: true,
   },
-  devServer: {
-    static: {
-      directory: resolve(__dirname, 'public'),
-      publicPath: '/',
+  ignoreWarnings: [
+    {
+      module: /module2\.js\?[34]/,
     },
-    compress: true,
-    port: 8080,
-    hot: true,
-  },
+    {
+      module: /[13]/,
+      message: /homepage/,
+    },
+    /warning from compiler/,
+    () => true,
+  ],
 };
