@@ -15,9 +15,7 @@
   "author": "AGalenkov",
   "type": "module",
   "scripts": {
-    "test": "make test", 
-    "build": "webpack --config webpack.config.js",
-    "start": "serve -s dist"
+    "test": "make test"
   },
   "jest": {
     "verbose": true,
