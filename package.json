@@ -15,7 +15,8 @@
   "author": "AGalenkov",
   "type": "module",
   "scripts": {
-    "test": "make test"
+    "test": "make test",
+    "build": "webpack --mode production"
   },
   "jest": {
     "verbose": true,
