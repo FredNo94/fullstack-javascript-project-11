@@ -1,8 +1,10 @@
 import onChange from 'on-change';
 import * as yup from 'yup';
+import i18next from 'i18next';
 import renderError from './view.js';
+import ru from './locales/ru.js';
 
-export default function app() {
+function app(i18n) {
   const initialState = {
     form: {
       state: 'filling', // 'filling', 'success', 'error'
@@ -20,9 +22,9 @@ export default function app() {
 
   function handleFormStateChanges(state) {
     if (state.form.error) {
-      renderError(state.form.error);
+      renderError(state.form.error, i18n);
     } else if (state.form.state === 'success') {
-      renderError(false);
+      renderError(false, i18n);
       input.value = '';
       input.focus();
     }
@@ -37,11 +39,10 @@ export default function app() {
   const schema = yup.object().shape({
     url: yup
       .string()
-      .required('Это поле обязательно')
-      .url('Ссылка должна быть валидным URL')
+      .url()
       .test(
         'unique-feed',
-        'RSS уже существует',
+        i18n.t('feedbackMessage.isDublicate'),
         (url) => !watchedState.data.feeds.includes(url),
       ),
   });
@@ -67,3 +68,24 @@ export default function app() {
 
   handleFormStateChanges(watchedState);
 }
+
+const runApp = () => {
+  const i18Inst = i18next.createInstance();
+
+  i18Inst.init({
+    lng: 'ru',
+    debug: false,
+    resources: {
+      ru,
+    },
+  }).then(() => {
+    yup.setLocale({
+      string: {
+        url: i18Inst.t('feedbackMessage.isUrl'),
+      },
+    });
+    app(i18Inst);
+  });
+};
+
+export default runApp;
