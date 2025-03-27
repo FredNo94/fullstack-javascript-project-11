@@ -2,7 +2,6 @@
   "name": "@hexlet/code",
   "version": "1.0.0",
   "description": "RSS agregator",
-  "types": "module",
   "homepage": "https://github.com/FredNo94/fullstack-javascript-project-11#readme",
   "bugs": {
     "url": "https://github.com/FredNo94/fullstack-javascript-project-11/issues"
@@ -67,6 +66,8 @@
   },
   "dependencies": {
     "bootstrap": "^5.3.3",
-    "npm-check-updates": "^16.6.2"
+    "npm-check-updates": "^16.6.2",
+    "on-change": "^5.0.1",
+    "yup": "^1.6.1"
   }
 }
