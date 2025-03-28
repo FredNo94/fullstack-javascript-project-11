@@ -1,8 +1,10 @@
 import onChange from 'on-change';
 import * as yup from 'yup';
 import i18next from 'i18next';
-import renderError from './view.js';
+import axios from 'axios';
+import { renderError, renderFeedAndPosts } from './view.js';
 import ru from './locales/ru.js';
+import parseRSS from './parser.js';
 
 function app(i18n) {
   const initialState = {
@@ -11,6 +13,7 @@ function app(i18n) {
       error: null,
     },
     data: {
+      feedsUrls: [],
       feeds: [],
       posts: [],
       readPosts: [],
@@ -23,16 +26,19 @@ function app(i18n) {
   function handleFormStateChanges(state) {
     if (state.form.error) {
       renderError(state.form.error, i18n);
-    } else if (state.form.state === 'success') {
-      renderError(false, i18n);
-      input.value = '';
-      input.focus();
     }
   }
 
   const watchedState = onChange(initialState, (path) => {
     if (path.startsWith('form')) {
       handleFormStateChanges(watchedState);
+    }
+
+    if (watchedState.form.state === 'success') {
+      renderError(false, i18n);
+      renderFeedAndPosts(watchedState, i18n);
+      input.value = '';
+      input.focus();
     }
   });
 
@@ -43,9 +49,21 @@ function app(i18n) {
       .test(
         'unique-feed',
         i18n.t('feedbackMessage.isDublicate'),
-        (url) => !watchedState.data.feeds.includes(url),
+        (url) => !watchedState.data.feedsUrls.includes(url),
       ),
   });
+
+  const getData = (url) => axios.get('https://allorigins.hexlet.app/get', {
+    params: {
+      url,
+      disableCache: true,
+    },
+  })
+    .then((response) => response)
+    .catch((e) => {
+      console.error('Request failed:', e);
+      throw e;
+    });
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -53,12 +71,19 @@ function app(i18n) {
     const url = formData.get('url').trim();
 
     schema.validate({ url })
-      .then(() => {
-        console.log(url);
-        watchedState.form.state = 'success';
+      .then(() => getData(url))
+      .then((response) => parseRSS(response.data.contents, i18n))
+      .then((feedData) => {
         watchedState.form.error = null;
-        watchedState.data.feeds.push(url);
-        console.log(Object.entries(watchedState.data.feeds));
+        watchedState.data.feedsUrls.push(url);
+        watchedState.data.feeds.push(feedData.feed);
+        watchedState.data.posts = [
+          ...new Set([
+            ...watchedState.data.posts,
+            ...feedData.posts,
+          ]),
+        ];
+        watchedState.form.state = 'success';
       })
       .catch((error) => {
         watchedState.form.state = 'error';
