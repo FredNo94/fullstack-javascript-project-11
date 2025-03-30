@@ -2,7 +2,9 @@ import onChange from 'on-change';
 import * as yup from 'yup';
 import i18next from 'i18next';
 import axios from 'axios';
-import { renderError, renderFeedAndPosts } from './view.js';
+import {
+  renderError, renderFeeds, renderPosts,
+} from './view.js';
 import ru from './locales/ru.js';
 import parseRSS from './parser.js';
 
@@ -36,7 +38,8 @@ function app(i18n) {
 
     if (watchedState.form.state === 'success') {
       renderError(false, i18n);
-      renderFeedAndPosts(watchedState, i18n);
+      renderFeeds(watchedState, i18n);
+      renderPosts(watchedState, i18n);
       input.value = '';
       input.focus();
     }
@@ -65,10 +68,46 @@ function app(i18n) {
       throw e;
     });
 
+  const activeUpdates = new Set();
+
+  const updatePost = (url) => {
+    if (activeUpdates.has(url)) return Promise.resolve();
+    activeUpdates.add(url);
+    return getData(url)
+      .then((response) => {
+        const existingLinks = new Set(watchedState.data.posts.map((post) => post.link));
+        const feedData = parseRSS(response.data.contents, i18n);
+        const newPosts = feedData.posts.filter((post) => !existingLinks.has(post.link));
+
+        if (newPosts.length > 0) {
+          watchedState.data.posts = [...newPosts, ...watchedState.data.posts];
+          renderPosts(watchedState, i18n);
+        }
+      })
+      .catch((error) => {
+        console.error(`Ошибка обновления для ${url}:`, error.message);
+      })
+      .finally(() => {
+        activeUpdates.delete(url);
+        setTimeout(() => {
+          updatePost(url);
+        }, 5000);
+      });
+  };
+
+  const startAutoUpdatePosts = () => {
+    const feeds = watchedState.data.feedsUrls;
+    feeds.forEach((item) => {
+      console.log(`item ${item}`);
+      updatePost(item);
+    });
+  };
+
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     const formData = new FormData(event.target);
     const url = formData.get('url').trim();
+    watchedState.form.state = 'loading';
 
     schema.validate({ url })
       .then(() => getData(url))
@@ -84,6 +123,9 @@ function app(i18n) {
           ]),
         ];
         watchedState.form.state = 'success';
+        setTimeout(() => {
+          startAutoUpdatePosts();
+        }, 5000);
       })
       .catch((error) => {
         watchedState.form.state = 'error';

@@ -34,27 +34,16 @@ export function renderError(error, i18n) {
   }
 }
 
-export function renderFeedAndPosts(state, i18n) {
-  const postForm = document.querySelector('.posts');
+export function renderFeeds(state, i18n) {
   const feedForm = document.querySelector('.feeds');
-  const feedOnForm = feedForm.querySelector('.list-group');
-
-  if (!feedOnForm) {
-    feedForm.innerHTML = baseHTMLFeeds;
-    postForm.innerHTML = baseHTMLPosts;
-  }
+  feedForm.innerHTML = baseHTMLFeeds;
 
   const feedTitel = feedForm.querySelector('h2');
   feedTitel.textContent = i18n.t('uiTexts.feeds');
 
-  const postTitel = postForm.querySelector('h2');
-  postTitel.textContent = i18n.t('uiTexts.posts');
-
   const feedList = feedForm.querySelector('ul');
-  const postList = postForm.querySelector('ul');
 
   const feedsData = state.data.feeds;
-  const feedPosts = state.data.posts;
 
   feedsData.map((feed) => {
     const li = document.createElement('li');
@@ -67,9 +56,20 @@ export function renderFeedAndPosts(state, i18n) {
         `;
     return feedList.append(li);
   });
+}
+
+export function renderPosts(state, i18n) {
+  const postForm = document.querySelector('.posts');
+  postForm.innerHTML = baseHTMLPosts;
+
+  const postTitel = postForm.querySelector('h2');
+  postTitel.textContent = i18n.t('uiTexts.posts');
+
+  const postList = postForm.querySelector('ul');
+
+  const feedPosts = state.data.posts;
 
   feedPosts.map((post) => {
-    console.log(`test post:  ${post}`);
     const li = document.createElement('li');
     li.classList.add('list-group-item');
     li.classList.add('d-flex');
@@ -78,14 +78,14 @@ export function renderFeedAndPosts(state, i18n) {
     li.classList.add('border-0');
     li.classList.add('border-end-0');
     li.innerHTML = `
-            <a  href="${post.link}" class="fw-bold" data-id="${post.id}" target="_blank" rel="noopener noreferrer">
-            ${post.title}
-            </a>
-            <button type="button"
-                class="btn btn-outline-primary btn-sm" data-id="${post.id}" data-bs-toggle="modal"
-                data-bs-target="#modal">Просмотр
-            </button>
-        `;
+              <a  href="${post.link}" class="fw-bold" data-id="${post.id}" target="_blank" rel="noopener noreferrer">
+              ${post.title}
+              </a>
+              <button type="button"
+                  class="btn btn-outline-primary btn-sm" data-id="${post.id}" data-bs-toggle="modal"
+                  data-bs-target="#modal">Просмотр
+              </button>
+          `;
     return postList.append(li);
   });
 }
