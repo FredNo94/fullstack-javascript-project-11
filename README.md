@@ -14,5 +14,5 @@ sudo npm link
 ```
 
 ---
-###Example webapp RSS agregator:
+### Example webapp RSS agregator:
 https://fullstack-javascript-pro-git-02f0f3-alexandrs-projects-c82a2e65.vercel.app/
