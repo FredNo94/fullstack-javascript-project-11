@@ -3,7 +3,7 @@ import * as yup from 'yup';
 import i18next from 'i18next';
 import axios from 'axios';
 import {
-  renderError, renderFeeds, renderPosts, renderModal,
+  renderError, renderFeeds, renderPosts, renderModal, renderSubmit,
 } from './view.js';
 import ru from './locales/ru.js';
 import parseRSS from './parser.js';
@@ -28,6 +28,7 @@ function app(i18n) {
   function handleFormStateChanges(state) {
     if (state.form.error) {
       renderError(state.form.error, i18n);
+      renderSubmit(true);
     }
   }
 
@@ -40,8 +41,13 @@ function app(i18n) {
       renderError(false, i18n);
       renderFeeds(watchedState, i18n);
       renderPosts(watchedState, i18n);
+      renderSubmit(true);
       input.value = '';
       input.focus();
+    }
+
+    if (watchedState.form.state === 'loading') {
+      renderSubmit();
     }
   });
 
@@ -49,6 +55,7 @@ function app(i18n) {
     url: yup
       .string()
       .url()
+      .required('feedbackMessage.isNotRSS')
       .test(
         'unique-feed',
         i18n.t('feedbackMessage.isDublicate'),
@@ -128,7 +135,7 @@ function app(i18n) {
       })
       .catch((error) => {
         watchedState.form.state = 'error';
-        watchedState.form.error = error.message;
+        watchedState.form.error = error.message === 'Network Error' ? i18n.t('feedbackMessage.isNetworkError') : watchedState.form.error = error.message;
       });
   });
 

@@ -102,3 +102,12 @@ export function renderModal(post) {
   modalDiscr.textContent = post.discr;
   modalLinkBtn.setAttribute('href', post.link);
 }
+
+export function renderSubmit(state = false) {
+  const btnSubmit = document.querySelector('button[type=submit]');
+  if (state) {
+    btnSubmit.removeAttribute('disabled');
+  } else {
+    btnSubmit.setAttribute('disabled', '');
+  }
+}
