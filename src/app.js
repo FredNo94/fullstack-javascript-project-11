@@ -3,7 +3,7 @@ import * as yup from 'yup';
 import i18next from 'i18next';
 import axios from 'axios';
 import {
-  renderError, renderFeeds, renderPosts,
+  renderError, renderFeeds, renderPosts, renderModal,
 } from './view.js';
 import ru from './locales/ru.js';
 import parseRSS from './parser.js';
@@ -15,7 +15,6 @@ function app(i18n) {
       error: null,
     },
     data: {
-      feedsUrls: [],
       feeds: [],
       posts: [],
       readPosts: [],
@@ -24,6 +23,7 @@ function app(i18n) {
 
   const input = document.querySelector('input[id=url-input]');
   const form = document.querySelector('.rss-form');
+  const modal = document.querySelector('div[id=modal]');
 
   function handleFormStateChanges(state) {
     if (state.form.error) {
@@ -52,7 +52,10 @@ function app(i18n) {
       .test(
         'unique-feed',
         i18n.t('feedbackMessage.isDublicate'),
-        (url) => !watchedState.data.feedsUrls.includes(url),
+        (url) => {
+          const urls = watchedState.data.feeds.map((feed) => feed.url);
+          return !urls.includes(url);
+        },
       ),
   });
 
@@ -76,7 +79,7 @@ function app(i18n) {
     return getData(url)
       .then((response) => {
         const existingLinks = new Set(watchedState.data.posts.map((post) => post.link));
-        const feedData = parseRSS(response.data.contents, i18n);
+        const feedData = parseRSS(url, response.data.contents, i18n, watchedState);
         const newPosts = feedData.posts.filter((post) => !existingLinks.has(post.link));
 
         if (newPosts.length > 0) {
@@ -96,11 +99,8 @@ function app(i18n) {
   };
 
   const startAutoUpdatePosts = () => {
-    const feeds = watchedState.data.feedsUrls;
-    feeds.forEach((item) => {
-      console.log(`item ${item}`);
-      updatePost(item);
-    });
+    const feeds = watchedState.data.feeds.map((feed) => feed.url);
+    feeds.forEach((item) => updatePost(item));
   };
 
   form.addEventListener('submit', (event) => {
@@ -111,10 +111,9 @@ function app(i18n) {
 
     schema.validate({ url })
       .then(() => getData(url))
-      .then((response) => parseRSS(response.data.contents, i18n))
+      .then((response) => parseRSS(url, response.data.contents, i18n, watchedState))
       .then((feedData) => {
         watchedState.form.error = null;
-        watchedState.data.feedsUrls.push(url);
         watchedState.data.feeds.push(feedData.feed);
         watchedState.data.posts = [
           ...new Set([
@@ -131,6 +130,20 @@ function app(i18n) {
         watchedState.form.state = 'error';
         watchedState.form.error = error.message;
       });
+  });
+
+  modal.addEventListener('show.bs.modal', (eventModal) => {
+    const button = eventModal.relatedTarget;
+    const postId = button.getAttribute('data-id');
+    const { posts } = watchedState.data;
+    const post = posts.filter((el) => el.id === postId);
+
+    if (!watchedState.data.readPosts.includes(postId)) {
+      watchedState.data.readPosts.push(postId);
+      renderPosts(watchedState, i18n);
+    }
+
+    renderModal(post[0]);
   });
 
   handleFormStateChanges(watchedState);

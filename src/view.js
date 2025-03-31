@@ -68,8 +68,10 @@ export function renderPosts(state, i18n) {
   const postList = postForm.querySelector('ul');
 
   const feedPosts = state.data.posts;
+  const readPosts = new Set(state.data.readPosts);
 
   feedPosts.map((post) => {
+    const classTitle = readPosts.has(post.id) ? 'fw-normal' : 'fw-bold';
     const li = document.createElement('li');
     li.classList.add('list-group-item');
     li.classList.add('d-flex');
@@ -78,7 +80,7 @@ export function renderPosts(state, i18n) {
     li.classList.add('border-0');
     li.classList.add('border-end-0');
     li.innerHTML = `
-              <a  href="${post.link}" class="fw-bold" data-id="${post.id}" target="_blank" rel="noopener noreferrer">
+              <a  href="${post.link}" class="${classTitle}" data-id="${post.id}" target="_blank" rel="noopener noreferrer">
               ${post.title}
               </a>
               <button type="button"
@@ -88,4 +90,15 @@ export function renderPosts(state, i18n) {
           `;
     return postList.append(li);
   });
+}
+
+export function renderModal(post) {
+  const modal = document.querySelector('div[class=modal-dialog]');
+  const modalTitle = modal.querySelector('.modal-title');
+  const modalDiscr = modal.querySelector('.modal-body');
+  const modalLinkBtn = modal.querySelector('.btn');
+
+  modalTitle.textContent = post.title;
+  modalDiscr.textContent = post.discr;
+  modalLinkBtn.setAttribute('href', post.link);
 }
