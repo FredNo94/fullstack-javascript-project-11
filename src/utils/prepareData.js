@@ -1,22 +1,22 @@
+import _ from 'lodash';
+
 export function getFeed(feedId, feed, url) {
   return {
-    feedId: feedId,
+    feedId,
     title: feed.title,
     description: feed.description,
-    url: url
-  }
-};
+    url,
+  };
+}
 
-export function getPosts(posts,feedId) {
-  const newPosts = posts.map((post) => {
-    return {
-      id: _.uniqueId(),
-      idFeed: feedId,
-      title: post.title,
-      link: post.link,
-      description: post.description,
-    }
-  })
+export function getPosts(posts, feedId) {
+  const newPosts = posts.map((post) => ({
+    id: _.uniqueId(),
+    idFeed: feedId,
+    title: post.title,
+    link: post.link,
+    description: post.description,
+  }));
 
-  return newPosts
-};
+  return newPosts;
+}

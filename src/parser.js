@@ -1,5 +1,3 @@
-import _ from 'lodash';
-
 export default function parseRSS(url, inputString, i18n) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(inputString, 'text/xml');
