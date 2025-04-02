@@ -51,9 +51,14 @@ export function renderFeeds(state, i18n) {
     li.classList.add('border-0');
     li.classList.add('border-end-0');
     li.innerHTML = `
-            <h3 class="h6 m-0">${feed.title}</h3>
-            <p class="m-0 small text-black-50">${feed.description}</p>
-        `;
+            <h3 class="h6 m-0"></h3>
+            <p class="m-0 small text-black-50"></p>
+            `;
+    const h3 = li.querySelector('h3');
+    const p = li.querySelector('p');
+    h3.textContent = feed.title;
+    p.textContent = feed.description;
+
     return feedList.append(li);
   });
 }
@@ -80,14 +85,20 @@ export function renderPosts(state, i18n) {
     li.classList.add('border-0');
     li.classList.add('border-end-0');
     li.innerHTML = `
-              <a  href="${post.link}" class="${classTitle}" data-id="${post.id}" target="_blank" rel="noopener noreferrer">
-              ${post.title}
-              </a>
+              <a target="_blank" rel="noopener noreferrer"></a>
               <button type="button"
-                  class="btn btn-outline-primary btn-sm" data-id="${post.id}" data-bs-toggle="modal"
+                  class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
                   data-bs-target="#modal">Просмотр
               </button>
           `;
+    const a = li.querySelector('a');
+    const button = li.querySelector('button');
+    a.setAttribute('href', post.link);
+    a.setAttribute('class', classTitle);
+    a.setAttribute('data-id', post.id);
+    a.textContent = post.title;
+    button.setAttribute('data-id', post.id);
+
     return postList.append(li);
   });
 }
@@ -95,11 +106,11 @@ export function renderPosts(state, i18n) {
 export function renderModal(post) {
   const modal = document.querySelector('div[class=modal-dialog]');
   const modalTitle = modal.querySelector('.modal-title');
-  const modalDiscr = modal.querySelector('.modal-body');
+  const modalDescription = modal.querySelector('.modal-body');
   const modalLinkBtn = modal.querySelector('.btn');
 
   modalTitle.textContent = post.title;
-  modalDiscr.textContent = post.discr;
+  modalDescription.textContent = post.description;
   modalLinkBtn.setAttribute('href', post.link);
 }
 

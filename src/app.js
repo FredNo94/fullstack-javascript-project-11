@@ -7,6 +7,8 @@ import {
 } from './view.js';
 import ru from './locales/ru.js';
 import parseRSS from './parser.js';
+import _ from 'lodash';
+import { getFeed, getPosts } from './utils/prepareData.js';
 
 function app(i18n) {
   const initialState = {
@@ -19,6 +21,10 @@ function app(i18n) {
       posts: [],
       readPosts: [],
     },
+    modal: {
+      activeModal: null,
+      state: 'hidden', // 'view'
+    }
   };
 
   const input = document.querySelector('input[id=url-input]');
@@ -49,6 +55,11 @@ function app(i18n) {
     if (watchedState.form.state === 'loading') {
       renderSubmit();
     }
+
+    if (watchedState.modal.state === 'show') {
+      renderModal(watchedState.modal.activeModal);
+    }
+
   });
 
   const schema = yup.object().shape({
@@ -80,18 +91,23 @@ function app(i18n) {
 
   const activeUpdates = new Set();
 
-  const updatePost = (url) => {
+  const updatePosts = () => {
+
+  const updatePromises = watchedState.data.feeds.map(({url, feedId}) => {
     if (activeUpdates.has(url)) return Promise.resolve();
     activeUpdates.add(url);
+    
     return getData(url)
       .then((response) => {
         const existingLinks = new Set(watchedState.data.posts.map((post) => post.link));
-        const feedData = parseRSS(url, response.data.contents, i18n, watchedState);
-        const newPosts = feedData.posts.filter((post) => !existingLinks.has(post.link));
+        const feedData = parseRSS(url, response.data.contents, i18n);
+        const posts = feedData.posts.filter((post) => !existingLinks.has(post.link));
 
-        if (newPosts.length > 0) {
+        if (posts.length > 0) {
+          watchedState.form.state === 'updating';
+          const newPosts = getPosts(posts, feedId)
           watchedState.data.posts = [...newPosts, ...watchedState.data.posts];
-          renderPosts(watchedState, i18n);
+          watchedState.form.state === 'success';
         }
       })
       .catch((error) => {
@@ -99,16 +115,13 @@ function app(i18n) {
       })
       .finally(() => {
         activeUpdates.delete(url);
-        setTimeout(() => {
-          updatePost(url);
-        }, 5000);
       });
-  };
+  });
 
-  const startAutoUpdatePosts = () => {
-    const feeds = watchedState.data.feeds.map((feed) => feed.url);
-    feeds.forEach((item) => updatePost(item));
-  };
+  return Promise.allSettled(updatePromises).then(() => {
+    setTimeout(updatePosts, 5000);
+  });
+};
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -118,20 +131,22 @@ function app(i18n) {
 
     schema.validate({ url })
       .then(() => getData(url))
-      .then((response) => parseRSS(url, response.data.contents, i18n, watchedState))
-      .then((feedData) => {
-        watchedState.form.error = null;
-        watchedState.data.feeds.push(feedData.feed);
+      .then((response) => {
+        const feedData = parseRSS(url, response.data.contents, i18n)
+        const feedId = _.uniqueId();
+        const posts = getPosts(feedData.posts, feedId);
+        const feed = getFeed(feedId, feedData.feed, url)
+        
+        watchedState.data.feeds.push(feed);
         watchedState.data.posts = [
           ...new Set([
             ...watchedState.data.posts,
-            ...feedData.posts,
+            ...posts,
           ]),
         ];
+        watchedState.form.error = null;
         watchedState.form.state = 'success';
-        setTimeout(() => {
-          startAutoUpdatePosts();
-        }, 5000);
+        updatePosts();
       })
       .catch((error) => {
         watchedState.form.state = 'error';
@@ -147,10 +162,16 @@ function app(i18n) {
 
     if (!watchedState.data.readPosts.includes(postId)) {
       watchedState.data.readPosts.push(postId);
-      renderPosts(watchedState, i18n);
     }
 
-    renderModal(post[0]);
+    watchedState.modal.activeModal = post[0];
+    watchedState.modal.state = 'show';
+
+  });
+
+  modal.addEventListener('hidden.bs.modal', (eventModal) => {
+    watchedState.modal.state = 'hidden';
+    watchedState.modal.activeModal = null;
   });
 
   handleFormStateChanges(watchedState);
